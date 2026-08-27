@@ -6,9 +6,9 @@
 
 - Project: Private PIN-protected photo gallery
 - Phase: Phase 6 — Deployment (complete)
-- Current chunk: Complete transient memory session implementation
-- Last completed chunk: Chunk 9 — Shifted visitor session authentication to a 100% transient, client-side React memory store. Removed visitor cookies and modified POST `/api/auth/unlock` to return the signed photo list directly on success. Modified `app/page.tsx` and `app/HomePageClient.tsx` to handle the PIN input forms and render the photo gallery/lightbox inline on `/` when unlocked. Configured `/gallery` route to redirect back to `/` instantly. Added strict browser password caching blockers (`noValidate`, `autoComplete="off"`, `autoComplete="new-password"`) to lock screen inputs. Re-validated all typechecks, unit tests, and production build compilations.
-- Next recommended action: Project is completed! Refer to `docs/DEPLOYMENT.md` for live database setup, bucket configuration, and cloud hosting steps.
+- Current chunk: Integrated client-side compression and secure admin password hashing
+- Last completed chunk: Chunk 10 — Implemented client-side image compression in the admin dashboard `UploadDropzone.tsx` (using an HTML Canvas to downscale high-res photos to max 2048px and compress to 85% JPEG in the browser). Refactored `lib/auth/pin.ts` to export a generic `verifyCredential` function, and updated `adminLoginAction` in `app/admin/login/actions.ts` to support secure PBKDF2 hashed admin passwords in `ADMIN_AUTH_SECRET`. Added React `key={photo.id}` in `Lightbox.tsx` to trigger premium entrance and scale animations when navigating through photos.
+- Next recommended action: Deploy changes to your repository! Run the final git push.
 
 ## Product decisions
 
@@ -19,6 +19,7 @@
 - Admin can upload and delete photos.
 - No public gallery in MVP.
 - **One-time session constraint**: Visitor session state is purely in memory. Closing the tab, navigating away, or refreshing the page (F5) immediately resets state and locks the gallery, requiring PIN entry again.
+- **Auto Image Optimization**: Admin uploads are compressed in-browser to max 2048px at 85% quality JPEG.
 
 ## Technical direction
 
@@ -29,12 +30,12 @@
 ## Security decisions
 
 - Server-side validation of file extension, magic bytes, dimensions, and size.
-- PIN verification uses timing-safe comparisons and PBKDF2 cryptography.
+- PIN verification and admin password check use timing-safe comparisons and PBKDF2 cryptography.
 - Rate limiting is durable, backed by database table `rate_limits` to prevent serverless instance bypasses.
 - Session tokens are fully signed to prevent client-side forgery.
 - Private photos are never exposed as raw storage paths; short-lived signed URLs expire after 15 minutes.
-- Admin password verification uses timingSafeEqual comparison.
 - **No persistent cookies for visitor**: Eliminates any possibility of session leakage or cross-origin forgery (CSRF) for visitor viewing.
+- **Hashed admin credentials**: The `ADMIN_AUTH_SECRET` can be configured as a timing-safe PBKDF2 hash, hiding plain secret passwords from deployment console logs.
 
 ## Completed verification
 
@@ -67,3 +68,4 @@ After every chunk, replace/update the status sections above. Preserve important 
 - Chunk 7 — Security Hardening: implemented 19 automated unit/integration tests in Vitest covering all core authentication, signed session parsing, and file sniffing validation bounds. Checked unauthenticated API blocks, session boundaries, and RLS tables. Verification: `tsc --noEmit` ✓, `npx vitest run` ✓, `next build` ✓.
 - Chunk 8 — Production Deployment Configuration: updated environment variable templates in `.env.example`, documented Supabase config and Vercel hosting guides in [`docs/DEPLOYMENT.md`](file:///c:/Users/yashs/Downloads/private-gallery/private-gallery/docs/DEPLOYMENT.md), and specified smoke testing protocols. Verification: `tsc --noEmit` ✓, `npx vitest run` ✓, `next build` ✓.
 - Chunk 9 — Transient Memory Session Architecture: refactored visitor flow to use a 100% transient, in-memory session. PIN entry returns signed URLs immediately, rendering the gallery inline on `/`. Removed visitor cookies. Added strict autocomplete block parameters to input elements. Verification: `tsc --noEmit` ✓, `npx vitest run` ✓, `next build` ✓.
+- Chunk 10 — Advanced Optimizations: integrated browser-side HTML Canvas image compression (reducing photo sizes and boosting loading speed), refactored credential checks to support hashed admin passwords in `ADMIN_AUTH_SECRET`, and mapped React element keys in Lightbox to trigger modern scale animations. Verification: `tsc --noEmit` ✓, `npx vitest run` ✓, `next build` ✓.

@@ -9,7 +9,7 @@ import styles from "./UploadDropzone.module.css";
 interface UploadFileState {
   file: File;
   id: string;
-  status: "pending" | "uploading" | "success" | "error";
+  status: "pending" | "compressing" | "uploading" | "success" | "error";
   errorMsg?: string;
 }
 
@@ -19,6 +19,77 @@ interface UploadDropzoneProps {
 
 const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
+/**
+ * Resizes and compresses an image file using an offscreen canvas
+ * before uploading it, saving bandwidth, storage, and visitor loading times.
+ */
+async function compressImage(file: File): Promise<File> {
+  const MAX_WIDTH = 2048;
+  const MAX_HEIGHT = 2048;
+  const QUALITY = 0.85;
+
+  return new Promise((resolve) => {
+    // Skip GIFs to preserve animations
+    if (file.type === "image/gif") {
+      resolve(file);
+      return;
+    }
+
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+
+    img.onload = () => {
+      URL.revokeObjectURL(img.src);
+      let width = img.width;
+      let height = img.height;
+
+      // Downscale if image dimensions exceed threshold
+      if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+        if (width > height) {
+          height = Math.round((height * MAX_WIDTH) / width);
+          width = MAX_WIDTH;
+        } else {
+          width = Math.round((width * MAX_HEIGHT) / height);
+          height = MAX_HEIGHT;
+        }
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        resolve(file); // Fallback
+        return;
+      }
+
+      ctx.drawImage(img, 0, 0, width, height);
+
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            resolve(file);
+            return;
+          }
+          // Convert Blob back to optimized JPEG File object
+          const compressedFile = new File([blob], file.name, {
+            type: "image/jpeg",
+            lastModified: Date.now(),
+          });
+          resolve(compressedFile);
+        },
+        "image/jpeg",
+        QUALITY
+      );
+    };
+
+    img.onerror = () => {
+      resolve(file); // Fallback to original on error
+    };
+  });
+}
 
 export default function UploadDropzone({ onUploadComplete }: UploadDropzoneProps) {
   const [dragActive, setDragActive] = useState(false);
@@ -102,13 +173,26 @@ export default function UploadDropzone({ onUploadComplete }: UploadDropzoneProps
 
     // Upload files one by one to show individual progress states
     for (const fileState of filesToUpload) {
-      // 1. Mark file status as uploading
+      // 1. Mark file status as compressing
+      setSelectedFiles((prev) =>
+        prev.map((f) => (f.id === fileState.id ? { ...f, status: "compressing" } : f))
+      );
+
+      // 2. Perform client-side compression
+      let fileToUpload = fileState.file;
+      try {
+        fileToUpload = await compressImage(fileState.file);
+      } catch (compressErr) {
+        console.warn("Client-side compression failed, falling back to original file:", compressErr);
+      }
+
+      // 3. Mark file status as uploading
       setSelectedFiles((prev) =>
         prev.map((f) => (f.id === fileState.id ? { ...f, status: "uploading" } : f))
       );
 
       const formData = new FormData();
-      formData.append("files", fileState.file);
+      formData.append("files", fileToUpload);
       if (caption.trim()) {
         formData.append("caption", caption.trim());
       }
@@ -261,6 +345,9 @@ export default function UploadDropzone({ onUploadComplete }: UploadDropzoneProps
                 {fileState.status === "pending" && (
                   <span className={`${styles.badge} ${styles.badgePending}`}>Pending</span>
                 )}
+                {fileState.status === "compressing" && (
+                  <span className={`${styles.badge} ${styles.badgeCompressing}`}>Compressing</span>
+                )}
                 {fileState.status === "uploading" && (
                   <span className={`${styles.badge} ${styles.badgeUploading}`}>Uploading</span>
                 )}
@@ -286,7 +373,7 @@ export default function UploadDropzone({ onUploadComplete }: UploadDropzoneProps
                   </div>
                 )}
 
-                {fileState.status !== "uploading" && !isUploading && (
+                {fileState.status !== "uploading" && fileState.status !== "compressing" && !isUploading && (
                   <button
                     type="button"
                     onClick={() => removeFile(fileState.id)}

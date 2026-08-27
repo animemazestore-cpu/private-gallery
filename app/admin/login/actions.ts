@@ -1,9 +1,9 @@
 "use server";
 
-import crypto from "crypto";
 import { headers } from "next/headers";
 import { checkAndRecordAttempt, resetAttempts } from "@/lib/auth/rateLimit";
 import { createAdminSession } from "@/lib/auth/session";
+import { verifyCredential } from "@/lib/auth/pin";
 
 /**
  * Server Action for admin login authentication.
@@ -34,14 +34,8 @@ export async function adminLoginAction(
       };
     }
 
-    // 2. Timing-safe password verification
-    const inputBuffer = Buffer.from(password);
-    const secretBuffer = Buffer.from(secret);
-
-    let isValid = false;
-    if (inputBuffer.length === secretBuffer.length) {
-      isValid = crypto.timingSafeEqual(inputBuffer, secretBuffer);
-    }
+    // 2. Cryptographic password verification (supports secure PBKDF2 hash)
+    const isValid = await verifyCredential(password, secret);
 
     if (isValid) {
       // Success: clear rate limit history

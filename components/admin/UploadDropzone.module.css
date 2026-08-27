@@ -131,6 +131,11 @@
   color: #ed8936;
 }
 
+.badgeCompressing {
+  background: rgba(66, 153, 225, 0.15);
+  color: #63b3ed;
+}
+
 .badgeSuccess {
   background: rgba(72, 187, 120, 0.15);
   color: #48bb78;

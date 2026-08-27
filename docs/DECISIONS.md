@@ -271,6 +271,31 @@ page reloads (F5), failing the requirement that refreshes must lock the screen.
 **Consequences:** Visitor viewing is 100% transient, requiring PIN entry on
 every reload or new open, with zero persistent footprints.
 
+## ADR-014 — Client-side Image Compression, Hashed Admin Credentials, Lightbox Keys
+
+**Date/chunk:** Chunk 10 — Advanced Optimizations
+
+**Decision:** (a) Integrate an offscreen HTML Canvas resizing helper in `UploadDropzone.tsx`
+to downscale files to max 2048px width/height and compress to 85% quality JPEG. (b) Refactor
+`lib/auth/pin.ts` to export a generic `verifyCredential` helper, allowing `ADMIN_AUTH_SECRET` to
+store secure PBKDF2 hashes instead of plaintext passwords. (c) Key the `Image` component in
+`Lightbox.tsx` with `key={photo.id}` to trigger entry animations on photo changes.
+
+**Reason:** (a) Direct uploads of large smartphone photos (8MB–15MB) cause long wait states
+for administrators, consume substantial bandwidth, and degrade gallery loading speeds for visitors.
+Compressing files client-side before upload reduces size by ~95% in milliseconds, while maintaining
+sufficient clarity for viewing. (b) Hashing the admin secret ensures the plaintext password is never
+exposed in server logs or the hosting dashboard, meeting strict production hardening guidelines. (c) React
+normally recycles the `Image` component when only the `src` attribute changes, which bypasses CSS animation
+rules. Keying the element tells React to remount it, triggering smooth scale-ins.
+
+**Alternatives considered:** (a) Perform image compression server-side (Next.js serverless function)
+— rejected because serverless functions have brief execution limits, and raw file uploads still consume
+excessive admin upload bandwidth.
+
+**Consequences:** Admin dashboard uploads are extremely fast, hosting storage is conserved, visitor load
+times are minimized, and security is cryptographically hardened.
+
 ## New decisions
 
 Append new decisions here using:

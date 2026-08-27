@@ -152,6 +152,7 @@ export default function Lightbox({
 
         <div className={styles.imageWrapper}>
           <Image
+            key={photo.id}
             src={photo.url}
             alt={photo.caption || "Lightbox zoom photo"}
             width={photo.width}
