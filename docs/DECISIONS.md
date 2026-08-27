@@ -242,6 +242,35 @@ or SQL Editor.
 **Consequences:** The application is fully prepared for cloud deployment, with clear instructions to guarantee
 secure live operations.
 
+## ADR-013 — Transient Memory Sessions, Autocomplete Blockers
+
+**Date/chunk:** Chunk 9 — Transient Memory Session Architecture
+
+**Decision:** (a) Transition the visitor session from cookie-based to a 100%
+client-side transient React state memory flow. (b) Return signed photo URL
+metadata directly in the POST `/api/auth/unlock` response on success, eliminating
+visitor session cookies. (c) Merge the lock screen and gallery grid to render
+inline on `/`. (d) Block browser credential caches by applying `autoComplete="new-password"`,
+`spellCheck="false"`, `autoCorrect="off"`, and `noValidate` parameters.
+
+**Reason:** (a) Browser settings like "Restore session" or "Continue where you
+left off" preserve session cookies across browser/tab restarts, violating the
+strict security goal. A purely in-memory session (React state) naturally deletes
+the authenticated state when the page reloads (F5) or is closed. (b) By returning
+photo URLs directly on unlock, the client does not need to send follow-up request
+tokens. (c) Rendering everything on `/` makes state transition simple and avoids
+flash of unauthenticated templates on `/gallery`. (d) Standard password autocomplete
+tells the browser to suggest or cache input parameters, which is highly insecure
+for shared-device lock screens.
+
+**Alternatives considered:** (a) Keep visitor cookies but set brief expirations
+(e.g., 10 seconds) — rejected because it causes redundant network refresh cycles
+and still allows hijack windows. (b) Use sessionStorage — rejected because it survives
+page reloads (F5), failing the requirement that refreshes must lock the screen.
+
+**Consequences:** Visitor viewing is 100% transient, requiring PIN entry on
+every reload or new open, with zero persistent footprints.
+
 ## New decisions
 
 Append new decisions here using:

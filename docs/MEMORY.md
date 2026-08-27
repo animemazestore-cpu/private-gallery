@@ -6,9 +6,9 @@
 
 - Project: Private PIN-protected photo gallery
 - Phase: Phase 6 — Deployment (complete)
-- Current chunk: Phase 6 complete — project fully implemented, hardened, and deployment guide prepared!
-- Last completed chunk: Chunk 8 — Formatted and finalized environment variables templates in `.env.example`, documented the full step-by-step Supabase storage, PostgreSQL tables setup, and RLS policies mapping in [`docs/DEPLOYMENT.md`](file:///c:/Users/yashs/Downloads/private-gallery/private-gallery/docs/DEPLOYMENT.md), and wrote post-deployment security smoke test validation procedures.
-- Next recommended chunk: Project complete! All phases from Phase 0 to Phase 6 are fully implemented, checked, and passing. The next steps are for the site owner to deploy this repository directly to Vercel/Supabase following Section 3 of `docs/DEPLOYMENT.md`.
+- Current chunk: Complete transient memory session implementation
+- Last completed chunk: Chunk 9 — Shifted visitor session authentication to a 100% transient, client-side React memory store. Removed visitor cookies and modified POST `/api/auth/unlock` to return the signed photo list directly on success. Modified `app/page.tsx` and `app/HomePageClient.tsx` to handle the PIN input forms and render the photo gallery/lightbox inline on `/` when unlocked. Configured `/gallery` route to redirect back to `/` instantly. Added strict browser password caching blockers (`noValidate`, `autoComplete="off"`, `autoComplete="new-password"`) to lock screen inputs. Re-validated all typechecks, unit tests, and production build compilations.
+- Next recommended action: Project is completed! Refer to `docs/DEPLOYMENT.md` for live database setup, bucket configuration, and cloud hosting steps.
 
 ## Product decisions
 
@@ -18,12 +18,13 @@
 - Gallery is mobile-first.
 - Admin can upload and delete photos.
 - No public gallery in MVP.
+- **One-time session constraint**: Visitor session state is purely in memory. Closing the tab, navigating away, or refreshing the page (F5) immediately resets state and locks the gallery, requiring PIN entry again.
 
 ## Technical direction
 
 - Stack: Next.js 15.5 + TypeScript 5.8 + React 19 + Supabase JS v2 + Vercel-compatible deployment.
 - Testing: Vitest configuration (runnable via `npm run test` or `npx vitest run`) with modular unit suites under `tests/`.
-- Lazy Evaluation: Supabase server/client SDK connections use lazy instantiation getters to prevent build-time crashes from missing process.env values.
+- Lazy Evaluation: DB/storage connections are evaluated lazily via getters to maintain compiler stability during Next.js builds.
 
 ## Security decisions
 
@@ -33,6 +34,7 @@
 - Session tokens are fully signed to prevent client-side forgery.
 - Private photos are never exposed as raw storage paths; short-lived signed URLs expire after 15 minutes.
 - Admin password verification uses timingSafeEqual comparison.
+- **No persistent cookies for visitor**: Eliminates any possibility of session leakage or cross-origin forgery (CSRF) for visitor viewing.
 
 ## Completed verification
 
@@ -64,3 +66,4 @@ After every chunk, replace/update the status sections above. Preserve important 
 - Chunk 6 — Admin Dashboard & Actions: implemented admin credentials Server Actions (`adminLoginAction` and `adminLogoutAction`), admin login form layouts, admin GET inventory route with signed URL generation, DELETE route handler with database/storage cleanups, POST upload batch handler with file checks and database register rollbacks, `UploadDropzone` drag-and-drop picker, `PhotoManagerTable` selections manager, and `DeleteConfirmDialog` modal confirmation dialog. Verification: `tsc --noEmit` ✓, `next build` ✓.
 - Chunk 7 — Security Hardening: implemented 19 automated unit/integration tests in Vitest covering all core authentication, signed session parsing, and file sniffing validation bounds. Checked unauthenticated API blocks, session boundaries, and RLS tables. Verification: `tsc --noEmit` ✓, `npx vitest run` ✓, `next build` ✓.
 - Chunk 8 — Production Deployment Configuration: updated environment variable templates in `.env.example`, documented Supabase config and Vercel hosting guides in [`docs/DEPLOYMENT.md`](file:///c:/Users/yashs/Downloads/private-gallery/private-gallery/docs/DEPLOYMENT.md), and specified smoke testing protocols. Verification: `tsc --noEmit` ✓, `npx vitest run` ✓, `next build` ✓.
+- Chunk 9 — Transient Memory Session Architecture: refactored visitor flow to use a 100% transient, in-memory session. PIN entry returns signed URLs immediately, rendering the gallery inline on `/`. Removed visitor cookies. Added strict autocomplete block parameters to input elements. Verification: `tsc --noEmit` ✓, `npx vitest run` ✓, `next build` ✓.

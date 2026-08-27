@@ -7,7 +7,7 @@ import React, { useState, useRef } from "react";
 import styles from "./PinEntry.module.css";
 
 interface PinEntryProps {
-  onUnlockSuccess: () => void;
+  onUnlockSuccess: (photos: any[]) => void;
 }
 
 export default function PinEntry({ onUnlockSuccess }: PinEntryProps) {
@@ -37,7 +37,7 @@ export default function PinEntry({ onUnlockSuccess }: PinEntryProps) {
       const data = await res.json();
 
       if (res.ok && data.success) {
-        onUnlockSuccess();
+        onUnlockSuccess(data.photos || []);
       } else {
         setError(data.error || "Invalid PIN. Access denied.");
         setShake(true);
