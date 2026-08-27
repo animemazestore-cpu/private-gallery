@@ -6,9 +6,9 @@
 
 - Project: Private PIN-protected photo gallery
 - Phase: Phase 6 — Deployment (complete)
-- Current chunk: Integrated client-side compression and secure admin password hashing
-- Last completed chunk: Chunk 10 — Implemented client-side image compression in the admin dashboard `UploadDropzone.tsx` (using an HTML Canvas to downscale high-res photos to max 2048px and compress to 85% JPEG in the browser). Refactored `lib/auth/pin.ts` to export a generic `verifyCredential` function, and updated `adminLoginAction` in `app/admin/login/actions.ts` to support secure PBKDF2 hashed admin passwords in `ADMIN_AUTH_SECRET`. Added React `key={photo.id}` in `Lightbox.tsx` to trigger premium entrance and scale animations when navigating through photos.
-- Next recommended action: Deploy changes to your repository! Run the final git push.
+- Current chunk: Reverted admin login verification to timing-safe plaintext comparison
+- Last completed chunk: Chunk 11 — Reverted admin login password checking in `app/admin/login/actions.ts` to use timing-safe plaintext comparisons against `ADMIN_AUTH_SECRET` directly (restoring normal fixed variable behavior). Implemented browser-side HTML Canvas image compression (resizing photo uploads to max 2048px at 85% JPEG in the browser), React key transitions for Lightbox navigating, and transient visitor lock screen flows.
+- Next recommended action: Push changes to GitHub and let Vercel update the live build.
 
 ## Product decisions
 
@@ -30,12 +30,12 @@
 ## Security decisions
 
 - Server-side validation of file extension, magic bytes, dimensions, and size.
-- PIN verification and admin password check use timing-safe comparisons and PBKDF2 cryptography.
+- PIN verification uses timing-safe comparisons and PBKDF2 cryptography.
+- Admin password verification uses timing-safe plaintext comparisons.
 - Rate limiting is durable, backed by database table `rate_limits` to prevent serverless instance bypasses.
 - Session tokens are fully signed to prevent client-side forgery.
 - Private photos are never exposed as raw storage paths; short-lived signed URLs expire after 15 minutes.
 - **No persistent cookies for visitor**: Eliminates any possibility of session leakage or cross-origin forgery (CSRF) for visitor viewing.
-- **Hashed admin credentials**: The `ADMIN_AUTH_SECRET` can be configured as a timing-safe PBKDF2 hash, hiding plain secret passwords from deployment console logs.
 
 ## Completed verification
 
@@ -69,3 +69,4 @@ After every chunk, replace/update the status sections above. Preserve important 
 - Chunk 8 — Production Deployment Configuration: updated environment variable templates in `.env.example`, documented Supabase config and Vercel hosting guides in [`docs/DEPLOYMENT.md`](file:///c:/Users/yashs/Downloads/private-gallery/private-gallery/docs/DEPLOYMENT.md), and specified smoke testing protocols. Verification: `tsc --noEmit` ✓, `npx vitest run` ✓, `next build` ✓.
 - Chunk 9 — Transient Memory Session Architecture: refactored visitor flow to use a 100% transient, in-memory session. PIN entry returns signed URLs immediately, rendering the gallery inline on `/`. Removed visitor cookies. Added strict autocomplete block parameters to input elements. Verification: `tsc --noEmit` ✓, `npx vitest run` ✓, `next build` ✓.
 - Chunk 10 — Advanced Optimizations: integrated browser-side HTML Canvas image compression (reducing photo sizes and boosting loading speed), refactored credential checks to support hashed admin passwords in `ADMIN_AUTH_SECRET`, and mapped React element keys in Lightbox to trigger modern scale animations. Verification: `tsc --noEmit` ✓, `npx vitest run` ✓, `next build` ✓.
+- Chunk 11 — Plaintext Admin Reversion: reverted the admin login password verification logic back to direct timing-safe comparison on the `ADMIN_AUTH_SECRET` environment variable, ensuring immediate plaintext compatibility. Verification: `tsc --noEmit` ✓, `npx vitest run` ✓, `next build` ✓.

@@ -296,6 +296,25 @@ excessive admin upload bandwidth.
 **Consequences:** Admin dashboard uploads are extremely fast, hosting storage is conserved, visitor load
 times are minimized, and security is cryptographically hardened.
 
+## ADR-015 — Plaintext Admin Credentials Reversion
+
+**Date/chunk:** Chunk 11 — Plaintext Admin Reversion
+
+**Decision:** Revert the admin authentication password check in `actions.ts` back to a
+timing-safe plaintext comparison of `process.env.ADMIN_AUTH_SECRET` using `crypto.timingSafeEqual()`,
+reverting the PBKDF2 hashing requirement for this specific credential.
+
+**Reason:** Requiring PBKDF2 format in the environment variable broke existing admin deployments
+where passwords were set as plaintext values. Reverting this comparison restores full backward
+compatibility so that administrators can log in normally with their configured password, while retaining the
+timingSafeEqual verification guard.
+
+**Alternatives considered:** Keeping the hashing check and forcing the user to regenerate
+their admin secret hash — rejected to avoid extra setup steps and prevent admin lockouts.
+
+**Consequences:** Admin authentication is operational, backward-compatible, and remains protected
+against timing attacks.
+
 ## New decisions
 
 Append new decisions here using:
