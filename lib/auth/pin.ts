@@ -14,24 +14,15 @@ export async function verifyCredential(
   try {
     const parts = configuredSecret.split("$");
 
-    // Support simple comparison in non-production environments for developer convenience
+    // Support plaintext fallback if the secret is not formatted as PBKDF2
     if (parts.length !== 4 || parts[0] !== "pbkdf2") {
-      if (process.env.NODE_ENV !== "production") {
-        console.warn(
-          "WARNING: Configured credential is not in secure 'pbkdf2$iterations$saltHex$hashHex' format. " +
-          "Falling back to simple check in development."
-        );
-        // timing-safe comparison for plaintext fallback
-        const a = Buffer.from(input);
-        const b = Buffer.from(configuredSecret);
-        if (a.length !== b.length) {
-          return false;
-        }
-        return crypto.timingSafeEqual(a, b);
+      // timing-safe comparison for plaintext fallback
+      const a = Buffer.from(input);
+      const b = Buffer.from(configuredSecret);
+      if (a.length !== b.length) {
+        return false;
       }
-
-      console.error("Invalid credential format. Secure PBKDF2 format required in production.");
-      return false;
+      return crypto.timingSafeEqual(a, b);
     }
 
     const iterations = parseInt(parts[1] || "100000", 10);
