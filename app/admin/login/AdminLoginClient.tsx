@@ -67,7 +67,7 @@ export default function AdminLoginClient() {
       <h1 className={styles.title}>Admin Control Panel</h1>
       <p className={styles.subtitle}>Enter administrator credentials to authenticate</p>
 
-      <form onSubmit={handleSubmit} className={styles.form}>
+      <form onSubmit={handleSubmit} className={styles.form} noValidate autoComplete="off">
         <div className={styles.inputGroup}>
           <label htmlFor="admin-password" className={styles.label}>
             Dashboard Password
@@ -76,6 +76,10 @@ export default function AdminLoginClient() {
             id="admin-password"
             ref={inputRef}
             type="password"
+            autoComplete="new-password"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck="false"
             placeholder="••••••••••••"
             value={password}
             onChange={(e) => setPassword(e.target.value)}

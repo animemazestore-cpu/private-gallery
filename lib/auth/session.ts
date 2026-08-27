@@ -20,8 +20,8 @@ const VISITOR_COOKIE_NAME = "pg_visitor_session";
 const ADMIN_COOKIE_NAME = "pg_admin_session";
 
 // Session expirations (in seconds)
-const VISITOR_SESSION_DURATION = 7 * 24 * 60 * 60; // 7 days
-const ADMIN_SESSION_DURATION = 2 * 60 * 60;        // 2 hours
+const VISITOR_SESSION_DURATION = 30 * 60; // 30 minutes
+const ADMIN_SESSION_DURATION = 15 * 60;   // 15 minutes
 
 function getSecret(): string {
   const secret = process.env.ADMIN_AUTH_SECRET;
@@ -112,7 +112,7 @@ export async function createVisitorSession(): Promise<string> {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: VISITOR_SESSION_DURATION,
+    // Omit maxAge so the cookie is a transient session cookie deleted when browser session ends
   });
 
   return token;
@@ -136,7 +136,7 @@ export async function createAdminSession(): Promise<string> {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
-    maxAge: ADMIN_SESSION_DURATION,
+    // Omit maxAge so the cookie is a transient session cookie deleted when browser session ends
   });
 
   return token;

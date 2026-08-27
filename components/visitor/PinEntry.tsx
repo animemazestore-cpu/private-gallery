@@ -87,14 +87,17 @@ export default function PinEntry({ onUnlockSuccess }: PinEntryProps) {
         <h1 className={styles.title}>Protected Gallery</h1>
         <p className={styles.subtitle}>Enter access PIN to view private photos</p>
 
-        <form onSubmit={handleSubmit} className={styles.form}>
+        <form onSubmit={handleSubmit} className={styles.form} noValidate autoComplete="off">
           <div className={styles.inputGroup}>
             <input
               ref={inputRef}
               type="password"
               inputMode="numeric"
               pattern="[0-9]*"
-              autoComplete="one-time-code"
+              autoComplete="new-password"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck="false"
               placeholder="••••"
               value={pin}
               onChange={handleInputChange}
